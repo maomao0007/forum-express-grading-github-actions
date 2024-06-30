@@ -1,6 +1,7 @@
 name: Node.js test
 
 on:
+<<<<<<< HEAD
   pull_request_target:
     branches:
       - main
@@ -11,6 +12,14 @@ on:
 #      - '*-test'
 #  pull_request:
 #    branches:
+=======
+  push:
+    branches:
+#      - main
+      - '*-test'
+  pull_request:
+    branches:
+>>>>>>> origin/R01-test
 #      - main
 
 env:
@@ -38,11 +47,15 @@ jobs:
           # mysql user: 'github'                 # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
           # mysql password: 'password'           # Required if "mysql user" exists. The password for the "mysql user"
       - run: mysql --version
+<<<<<<< HEAD
       - run: echo "checkout head ${{ github.event.pull_request.head.sha }}"
       - run: echo "base ${{ github.event.pull_request.base.sha }}"
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+=======
+      - uses: actions/checkout@v3
+>>>>>>> origin/R01-test
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
