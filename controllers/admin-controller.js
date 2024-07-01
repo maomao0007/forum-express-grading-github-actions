@@ -34,11 +34,10 @@ const adminController = {
       .catch((err) => next(err));
   },
   getRestaurant: (req, res, next) => {
-    return Restaurant
-      .findByPk(req.params.id, {
-        //去資料庫用 id 找一筆資料
-        raw: true, // 找到以後整理格式再回傳
-      })
+    return Restaurant.findByPk(req.params.id, {
+      //去資料庫用 id 找一筆資料
+      raw: true, // 找到以後整理格式再回傳
+    })
       .then((restaurant) => {
         if (!restaurant) throw new Error("Restaurant didn't exist!"); //  如果找不到，回傳錯誤訊息，後面不執行
         res.render("admin/restaurant", { restaurant });
@@ -46,10 +45,9 @@ const adminController = {
       .catch((err) => next(err));
   },
   editRestaurant: (req, res, next) => {
-    return Restaurant
-      .findByPk(req.params.id, {
-        raw: true,
-      })
+    return Restaurant.findByPk(req.params.id, {
+      raw: true,
+    })
       .then((restaurant) => {
         if (!restaurant) throw new Error("Restaurant didn't exist!");
         res.render("admin/edit-restaurant", { restaurant });
@@ -61,8 +59,10 @@ const adminController = {
     if (!name) throw new Error("Restaurant name is required!");
     const { file } = req;
 
-    return Promise
-      .all([Restaurant.findByPk(req.params.id), localFileHandler(file)])
+    return Promise.all([
+      Restaurant.findByPk(req.params.id),
+      localFileHandler(file),
+    ])
       .then(([restaurant, filePath]) => {
         if (!restaurant) throw new Error("Restaurant didn't exist!");
 
@@ -92,41 +92,29 @@ const adminController = {
       .catch((err) => next(err));
   },
 
- getUsers: (req, res, next) => {
-  return User.findAll({ raw: true,
-    })
+  getUsers: (req, res, next) => {
+    return User.findAll({ raw: true })
       .then((users) => res.render("admin/users", { users }))
       .catch((err) => next(err));
   },
 
- patchUser: (req, res, next) => {
-   return User.findByPk(req.params.id)
-     .then((user) => {
-       if (!user) throw new Error("User didn't exist!");
+  patchUser: (req, res, next) => {
+    return User.findByPk(req.params.id)
+      .then(user => {
+        if (!user) throw new Error("User didn't exist!")
+        if (user.email === 'root@example.com') {
+          req.flash('error_messages', '禁止變更 root 權限')
+          return res.redirect('back')
+        }
 
-       // 檢查當前登錄用戶是否為管理員
-       if (!req.user.isAdmin) {
-         throw new Error("Only admins are able to edit user roles.");
-       }
-       // 根據設計，root (ID 為 1 的使用者) 的 admin 權限無法被自己和其他用戶更改
-       if (user.id === 1) {
-         throw new Error(
-           "The superuser (root) role cannot be edited by anyone."
-         );
-       }
-
-       // 切換 isAdmin 狀態
-       return user.update({ isAdmin: !user.isAdmin });
-     })
-     .then((updatedUser) => {
-       req.flash(
-         "success_messages",
-         `User role updated to ${updatedUser.isAdmin ? "Admin" : "User"}`
-       );
-       res.redirect("/admin/users");
-     })
-     .catch((err) => next(err));
- }
+        return user.update({ isAdmin: !user.isAdmin })
+      })
+      .then(() => {
+        req.flash('success_messages', '使用者權限變更成功')
+        res.redirect('/admin/users')
+      })
+      .catch(err => next(err))
+  }
 }
 
 module.exports = adminController;
