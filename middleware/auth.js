@@ -1,5 +1,5 @@
 // const { ensureAuthenticated, getUser } = require("../helpers/auth-helpers");
-const helper = require("../helpers/auth-helpers");
+const helpers = require("../helpers/auth-helpers");
 const authenticated = (req, res, next) => {
   // 檢查使用者是否已經通過身份驗證
   // if (req.isAuthenticated)
