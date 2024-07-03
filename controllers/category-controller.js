@@ -2,8 +2,8 @@ const { Category } = require("../models");
 const categoryController = {
   getCategories: (req, res, next) => {
     return Promise.all([
-      Category.findAll({ raw: true })
-      req.params.id ? Category.findByPK(req.params.id, { raw:true }) : null
+      Category.findAll({ raw: true }),
+      req.params.id ? Category.findByPK(req.params.id, { raw:true }) : null])
       .then(([categories, category]) => res.render("admin/categories", { categories,category }))
       .catch((err) => next(err));
   },
