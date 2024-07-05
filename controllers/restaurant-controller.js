@@ -1,12 +1,12 @@
-const { Restaurant, Category } = require("../models");
+const { Restaurant, Category, Comment, User } = require("../models");
 const { getOffset, getPagination } = require("../helpers/pagination-helper");
 const restaurantController = {
   getRestaurants: (req, res, next) => {
     const DEFAULT_LIMIT = 9;
     const categoryId = Number(req.query.categoryId) || ""; // 新增這裡，從網址上拿下來的參數是字串，先轉成 Number 再操作
-     const page = Number(req.query.page) || 1;
-     const limit = Number(req.query.limit) || DEFAULT_LIMIT;
-     const offset = getOffset(limit, page);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || DEFAULT_LIMIT;
+    const offset = getOffset(limit, page);
     return Promise.all([
       Restaurant.findAndCountAll({
         include: Category,
@@ -32,11 +32,11 @@ const restaurantController = {
           pagination: getPagination(limit, page, restaurants.count), // 修改這裡，把 pagination 資料傳回樣板
         });
       })
-      .catch((err) => next(err)); 
+      .catch((err) => next(err));
   },
   getRestaurant: (req, res, next) => {
     return Restaurant.findByPk(req.params.id, {
-      include: Category,
+      include: [Category, { model: Comment, include: User }],
     })
       .then((restaurant) => {
         if (!restaurant) throw new Error("This restaurant didn't exist.");
@@ -63,5 +63,5 @@ const restaurantController = {
       })
       .catch((err) => next(err));
   },
-}; 
+};
 module.exports = restaurantController;
