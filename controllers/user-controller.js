@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs"); //載入 bcrypt
 const db = require("../models");
 const { User } = db;
+const { localFileHandler } = require("../helpers/file-helpers");
 const userController = {
   signUpPage: (req, res) => {
     res.render("signup");
@@ -43,5 +44,60 @@ const userController = {
     req.logout();
     res.redirect("/signin");
   },
-};
+  getUser: (req, res, next) => {
+   const id = req.params.id;
+    User.findByPk(id)
+      .then((user) => {
+        if (!user) throw new Error("User didn't exist.");
+        const userData = {
+          name: user.get("name"),
+          email: user.get("email"),
+          image: user.get("image"),
+          isAdmin: user.get("isAdmin"),
+          id: user.get('id'),
+        };
+        console.log(user)
+        res.render("profile", { user: userData });
+      })
+      .catch((err) => next(err));
+  },
+  editUser: (req, res, next) => {
+    const id = req.params.id;
+    // const id = req.user.id;
+    User.findByPk(id)
+      .then((user) => {
+        if (!user) throw new Error("User didn't exist.");
+        const userData = {
+          name: user.get("name"),
+          email: user.get("email"),
+          image: user.get("image"),
+          isAdmin: user.get("isAdmin"),
+          id: user.get('id'),
+        };
+        res.render("edit-profile", { user: userData });
+      })
+      .catch((err) => next(err));
+  },
+  putUser: (req, res, next) => {
+    const { name } = req.body
+    if (!name) throw new Error('User name is required!')
+    const { file } = req // 把檔案取出來
+    Promise.all([ // 非同步處理
+      User.findByPk(req.user.id), // 去資料庫查有沒有這個使用者
+      localFileHandler(file) // 把檔案傳到 file-helper 處理
+    ])
+      .then(([user, filePath]) => { // 以上兩樣事都做完以後
+        if (!user) throw new Error("User didn't exist!")
+        return user.update({ // 修改這筆資料
+          name,
+          image: filePath || user.image // 如果 filePath 是 Truthy (使用者有上傳新照片) 就用 filePath，是 Falsy (使用者沒有上傳新照片) 就沿用原本資料庫內的值
+        })
+      })  
+      .then(() => {
+        req.flash("success_messages", "Profile successfully updated.")
+        res.redirect("profile");
+      })
+      .catch((err) => next(err))
+  }
+}
 module.exports = userController;
