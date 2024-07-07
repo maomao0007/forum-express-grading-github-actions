@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs"); //載入 bcrypt
 const db = require("../models");
-const { User } = db;
+const { User, Comment, Restaurant } = db;
 const { localFileHandler } = require("../helpers/file-helpers");
 const userController = {
   signUpPage: (req, res) => {
@@ -30,7 +30,8 @@ const userController = {
         req.flash("success_messages", "Successfully registered！"); //並顯示成功訊息
         res.redirect("/signin");
       })
-      .catch((err) => next(err)); //接住前面拋出的錯誤，呼叫專門做錯誤處理的 middleware
+      //接住前面拋出的錯誤，呼叫專門做錯誤處理的 middleware
+      .catch((err) => next(err)); 
   },
   signInPage: (req, res) => {
     res.render("signin");
@@ -45,59 +46,66 @@ const userController = {
     res.redirect("/signin");
   },
   getUser: (req, res, next) => {
-   const id = req.params.id;
-    User.findByPk(id)
+    return User.findByPk(req.params.id, {
+      include: { model: Comment, include: [Restaurant] },
+    })
       .then((user) => {
         if (!user) throw new Error("User didn't exist.");
-        const userData = {
-          name: user.get("name"),
-          email: user.get("email"),
-          image: user.get("image"),
-          isAdmin: user.get("isAdmin"),
-          id: user.get('id'),
-        };
-        console.log(user)
-        res.render("profile", { user: userData });
+
+        // 轉換為 JSON 格式
+        user = user.toJSON();
+
+        res.render("users/profile", {
+          user,
+          // 預防 Comments 為 null 或 undefined
+          comments: user.Comments || [],
+        });
       })
       .catch((err) => next(err));
   },
+
   editUser: (req, res, next) => {
     const id = req.params.id;
-    // const id = req.user.id;
-    User.findByPk(id)
+    return User.findByPk(id)
       .then((user) => {
         if (!user) throw new Error("User didn't exist.");
-        const userData = {
-          name: user.get("name"),
-          email: user.get("email"),
-          image: user.get("image"),
-          isAdmin: user.get("isAdmin"),
-          id: user.get('id'),
-        };
-        res.render("edit-profile", { user: userData });
+        user = user.toJSON();
+
+        res.render("users/edit", {
+          user,
+          comments: user.Comments,
+        });
       })
       .catch((err) => next(err));
   },
   putUser: (req, res, next) => {
-    const { name } = req.body
-    if (!name) throw new Error('User name is required!')
-    const { file } = req // 把檔案取出來
-    Promise.all([ // 非同步處理
-      User.findByPk(req.user.id), // 去資料庫查有沒有這個使用者
-      localFileHandler(file) // 把檔案傳到 file-helper 處理
+    const { name } = req.body;
+    if (req.user.id !== Number(req.params.id))
+      throw new Error("只能更改自己的資料！");
+    if (!name) throw new Error("User name is required!");
+    // 把檔案取出來
+    const { file } = req;
+    // 非同步處理
+    return Promise.all([
+      // 去資料庫查有沒有這個使用者
+      User.findByPk(req.params.id),
+      // 把檔案傳到 file-helper 處理
+      localFileHandler(file),
     ])
-      .then(([user, filePath]) => { // 以上兩樣事都做完以後
-        if (!user) throw new Error("User didn't exist!")
-        return user.update({ // 修改這筆資料
+      .then(([user, filePath]) => {
+        // 以上兩樣事都做完以後
+        if (!user) throw new Error("User didn't exist!");
+        return user.update({
           name,
-          image: filePath || user.image // 如果 filePath 是 Truthy (使用者有上傳新照片) 就用 filePath，是 Falsy (使用者沒有上傳新照片) 就沿用原本資料庫內的值
-        })
-      })  
-      .then(() => {
-        req.flash("success_messages", "Profile successfully updated.")
-        res.redirect("profile");
+          // 如果 filePath 是 Truthy (使用者有上傳新照片) 就用 filePath，是 Falsy (使用者沒有上傳新照片) 就沿用原本資料庫內的值
+          image: filePath || user.image,
+        });
       })
-      .catch((err) => next(err))
-  }
-}
+      .then((user) => {
+        req.flash("success_messages", "使用者資料編輯成功");
+        res.redirect(`/users/${user.id}`);
+      })
+      .catch((err) => next(err));
+  },
+};
 module.exports = userController;

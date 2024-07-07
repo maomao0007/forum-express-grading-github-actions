@@ -1,0 +1,69 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <img class="img-fluid rounded" src="{{ user.image }}" alt="{{ user.name }}'s profile picture" 
+           style="width: 100%; max-width: 250px; transition: opacity 0.5s;" onload="this.style.opacity=1">
+    </div>
+    <div class="col-md-8">
+      <div class="mb-3">
+        <strong>Name:</strong> {{ user.name }}
+      </div>
+      <div class="mb-3">
+        <strong>Email:</strong> {{ user.email }}
+      </div>
+      <div class="mt-4">
+        <a class="btn btn-outline-secondary me-2" href="/users/{{user.id}}/edit">Edit</a>
+        <a class="btn btn-outline-info" href="javascript:history.back()">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <h5>已評論過的餐廳</h5>
+    </div>
+    {{#each comments}}
+      <div class="col-md-4 mb-4">
+        <div class="restaurant-item">
+          <a href="#comment-{{this.id}}">
+            <img src="{{ this.Restaurant.image }}" alt="{{ this.Restaurant.name }}" class="img-fluid" style="max-width: 200px;">
+          </a>
+          <h6 class="mt-2">{{this.Restaurant.name}}</h6>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="comment-details" style="display: none;">
+        {{#each comments}}
+          <div id="comment-{{this.id}}" class="comment-item mb-4">
+            <h5>{{this.Restaurant.name}}</h5>
+            <blockquote class="blockquote">
+              <p>{{this.text}}</p>
+              <footer class="blockquote-footer">
+                <a href="/users/{{../user.id}}">{{../user.name}}</a> 評論於 {{relativeTimeFromNow this.createdAt}}
+              </footer>
+            </blockquote>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 點擊圖片顯示留言部分
+  document.addEventListener("DOMContentLoaded", function() {
+    const restaurantItems = document.querySelectorAll('.restaurant-item');
+    restaurantItems.forEach(item => {
+      item.addEventListener('click', function() {
+        const commentDetails = document.querySelector('.comment-details');
+        commentDetails.style.display = 'block';
+      });
+    });
+  });
+</script>
