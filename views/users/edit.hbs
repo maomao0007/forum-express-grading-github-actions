@@ -1,0 +1,23 @@
+<form action="/users/{{user.id}}?_method=PUT" method="POST" enctype="multipart/form-data">
+  <div class="form-row mb-3">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" value="{{ user.name }}" class="form-control">
+  </div>
+
+  <div class="form-row mb-3">
+    <label for="current-image">Image</label>
+    <div class="text-center">
+      <img id="current-image" class="img-fluid" src="{{ user.image }}" style="max-width: 250px; margin-bottom: 25px; transition: opacity 0.5s; opacity:0;" onload="this.style.opacity=1">
+    </div>
+  </div>
+
+  <div class="form-row mb-3">
+    <label for="new-image">Upload New Image</label>
+    <input type="file" id="new-image" name="image" class="form-control-file">
+  </div>
+
+  <div class="form-row mb-3">
+    <button type="submit" class="btn btn-primary mr-2">Submit</button>
+    <a class="btn btn-outline-info" href="javascript:history.back()">Back</a>
+  </div>
+</form>
