@@ -63,5 +63,34 @@ const restaurantController = {
       })
       .catch((err) => next(err));
   },
+  getFeeds: (req, res, next) => { 
+    return Promise.all([
+      Restaurant.findAll({
+        // 查最新的 10 筆新增的餐廳和新增的評論
+        limit: 10,
+        // order 接受的參數是一組正列，第一個放用來排序的欄位名稱，第二個參數放排列的方式
+        order: [["createdAt", "DESC"]],
+        include: [Category],
+        raw: true,
+        nest: true,
+      }),
+      Comment.findAll({
+        // 查最新的 10 筆新增的評論
+        limit: 10,
+        order: [["createdAt", "DESC"]],
+        include: [User, Restaurant],
+        raw: true,
+        nest: true,
+      }),
+    ])
+      .then(([restaurants, comments]) => {
+        res.render("feeds", {
+          restaurants,
+          comments,
+        });
+      })
+      .catch((err) => next(err));
+  }
+
 };
 module.exports = restaurantController;
