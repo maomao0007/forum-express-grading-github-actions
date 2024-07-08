@@ -24,7 +24,8 @@
     <div class="col-12">
       <h5>已評論過的餐廳</h5>
     </div>
-    {{#each comments}}
+    {{!-- {{#each comments}} --}}
+    {{#each user.Comments}}
       <div class="col-md-4 mb-4">
         <div class="restaurant-item">
           <a href="#comment-{{this.id}}">
@@ -39,7 +40,8 @@
   <div class="row">
     <div class="col-12">
       <div class="comment-details" style="display: none;">
-        {{#each comments}}
+        {{!-- {{#each comments}} --}}
+        {{#each user.Comments}}
           <div id="comment-{{this.id}}" class="comment-item mb-4">
             <h5>{{this.Restaurant.name}}</h5>
             <blockquote class="blockquote">

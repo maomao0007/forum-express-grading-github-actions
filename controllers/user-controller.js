@@ -56,9 +56,7 @@ const userController = {
         user = user.toJSON();
 
         res.render("users/profile", {
-          user,
-          // 預防 Comments 為 null 或 undefined
-          comments: user.Comments || [],
+          user
         });
       })
       .catch((err) => next(err));
@@ -72,8 +70,7 @@ const userController = {
         user = user.toJSON();
 
         res.render("users/edit", {
-          user,
-          comments: user.Comments,
+          user
         });
       })
       .catch((err) => next(err));
