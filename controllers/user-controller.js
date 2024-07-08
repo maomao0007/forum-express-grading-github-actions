@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs"); //載入 bcrypt
 const db = require("../models");
-const { User, Comment, Restaurant } = db;
+const { User, Comment, Restaurant, Favorite } = db;
 const { localFileHandler } = require("../helpers/file-helpers");
 const userController = {
   signUpPage: (req, res) => {
@@ -104,5 +104,46 @@ const userController = {
       })
       .catch((err) => next(err));
   },
+
+  addFavorite: (req, res, next) => {
+    const { restaurantId } = req.params
+    return Promise.all([
+      Restaurant.findByPk(restaurantId),
+      Favorite.findOne({
+        // 找 user 和 restaurant 之間的關係，如果有關係，表示之前已加入收藏
+        where: { 
+          userId: req.user.id,
+          restaurantId 
+        }
+      })
+    ])
+      .then(([restaurant, favorite]) => {
+        if (!restaurant) throw new Error("Restaurant didn't exist!")
+        if (favorite) throw new Error('You have favorited this restaurant!')
+
+        return Favorite.create({
+          userId: req.user.id,
+          restaurantId
+        })
+      })
+      .then(() => res.redirect('back'))
+      .catch(err => next(err))
+  },
+  removeFavorite: (req, res, next) => {
+    return Favorite.findOne({
+      where: {
+        userId: req.user.id,
+        restaurantId: req.params.restaurantId
+      }
+    })
+      .then(favorite => { 
+        // userId 與 restaurantId 如果沒有關聯，就回傳錯誤訊息
+        if (!favorite) throw new Error("You haven't favorited this restaurant")
+
+        return favorite.destroy() // 有關聯就刪除
+      })
+      .then(() => res.redirect('back'))
+      .catch(err => next(err))
+  }
 };
 module.exports = userController;
