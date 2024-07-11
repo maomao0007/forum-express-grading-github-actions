@@ -2,8 +2,8 @@ const bcrypt = require("bcryptjs"); //載入 bcrypt
 const db = require("../models");
 const { User, Comment, Restaurant, Favorite, Like } = db;
 const { localFileHandler } = require("../helpers/file-helpers");
-const { Where } = require("sequelize/types/utils");
-const { deleteRestaurant } = require("./admin-controller");
+// const { Where } = require("sequelize/types/utils");
+// const { deleteRestaurant } = require("./admin-controller");
 const userController = {
   signUpPage: (req, res) => {
     res.render("signup");
@@ -153,10 +153,11 @@ const userController = {
       Restaurant.findByPk(restaurantId),
       Like.findOne({
         where: {
-          userId = req.user.id,
+          userId: req.user.id,
           restaurantId: req.params.restaurantId
         }
-      }) 
+      })
+    ])
       .then(([restaurant, like]) => {
         if (!restaurant) throw new Error("Restaurant didn't exist!")
         if (like) throw new Error('You have liked this restaurant!')
@@ -171,8 +172,8 @@ const userController = {
     removeLike: (req, res, next) => {
       return Like.findOne ({
         Where: {
-        userId = req.user.id,
-        restaurantId
+        userId: req.user.id,
+        restaurantId: req.params.id
         }
       })  
       .then((like) => {
