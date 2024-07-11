@@ -4,6 +4,7 @@ const { User, Comment, Restaurant, Favorite, Like } = db;
 const { localFileHandler } = require("../helpers/file-helpers");
 // const { Where } = require("sequelize/types/utils");
 // const { deleteRestaurant } = require("./admin-controller");
+
 const userController = {
   signUpPage: (req, res) => {
     res.render("signup");
@@ -33,7 +34,7 @@ const userController = {
         res.redirect("/signin");
       })
       //接住前面拋出的錯誤，呼叫專門做錯誤處理的 middleware
-      .catch((err) => next(err)); 
+      .catch((err) => next(err));
   },
   signInPage: (req, res) => {
     res.render("signin");
@@ -58,7 +59,7 @@ const userController = {
         user = user.toJSON();
 
         res.render("users/profile", {
-          user
+          user,
         });
       })
       .catch((err) => next(err));
@@ -72,7 +73,7 @@ const userController = {
         user = user.toJSON();
 
         res.render("users/edit", {
-          user
+          user,
         });
       })
       .catch((err) => next(err));
@@ -108,81 +109,82 @@ const userController = {
   },
 
   addFavorite: (req, res, next) => {
-    const { restaurantId } = req.params
+    const { restaurantId } = req.params;
     return Promise.all([
       Restaurant.findByPk(restaurantId),
       Favorite.findOne({
         // 找 user 和 restaurant 之間的關係，如果有關係，表示之前已加入收藏
-        where: { 
+        where: {
           userId: req.user.id,
-          restaurantId 
-        }
-      })
+          restaurantId,
+        },
+      }),
     ])
       .then(([restaurant, favorite]) => {
-        if (!restaurant) throw new Error("Restaurant didn't exist!")
-        if (favorite) throw new Error('You have favorited this restaurant!')
+        if (!restaurant) throw new Error("Restaurant didn't exist!");
+        if (favorite) throw new Error("You have favorited this restaurant!");
 
         return Favorite.create({
           userId: req.user.id,
-          restaurantId
-        })
+          restaurantId,
+        });
       })
-      .then(() => res.redirect('back'))
-      .catch(err => next(err))
+      .then(() => res.redirect("back"))
+      .catch((err) => next(err));
   },
   removeFavorite: (req, res, next) => {
     return Favorite.findOne({
       where: {
         userId: req.user.id,
-        restaurantId: req.params.restaurantId
-      }
+        restaurantId: req.params.restaurantId,
+      },
     })
-      .then(favorite => { 
+      .then((favorite) => {
         // userId 與 restaurantId 如果沒有關聯，就回傳錯誤訊息
-        if (!favorite) throw new Error("You haven't favorited this restaurant")
+        if (!favorite) throw new Error("You haven't favorited this restaurant");
 
-        return favorite.destroy() // 有關聯就刪除
+        return favorite.destroy(); // 有關聯就刪除
       })
-      .then(() => res.redirect('back'))
-      .catch(err => next(err))
+      .then(() => res.redirect("back"))
+      .catch((err) => next(err));
   },
   addLike: (req, res, next) => {
-    const { restaurantId } = req.params
+    const { restaurantId } = req.params;
     return Promise.all([
       Restaurant.findByPk(restaurantId),
       Like.findOne({
         where: {
           userId: req.user.id,
-          restaurantId: req.params.restaurantId
-        }
-      })
+          restaurantId,
+        },
+      }),
     ])
       .then(([restaurant, like]) => {
-        if (!restaurant) throw new Error("Restaurant didn't exist!")
-        if (like) throw new Error('You have liked this restaurant!')
+        if (!restaurant) throw new Error("Restaurant didn't exist!");
+        if (like) throw new Error("You have liked this restaurant!");
+
         return Like.create({
           userId: req.user.id,
-          restaurantId
-        })
-      })
-      .then(() => res.redirect('back'))
-      .catch(err => next(err))
-  },
-    removeLike: (req, res, next) => {
-      return Like.findOne ({
-        Where: {
-        userId: req.user.id,
-        restaurantId: req.params.id
-        }
-      })  
-      .then((like) => {
-        if (!like) throw new Error("You haven't liked this restaurant!")
-
-        return like.destroy()
+          restaurantId,
+        });
       })
       .then(() => res.redirect("back"))
-      .catch(err => next(err))  
-      }
+      .catch((err) => next(err));
+  },
+  removeLike: (req, res, next) => {
+    return Like.findOne({
+      where: {
+        userId: req.user.id,
+        restaurantId: req.params.restaurantId,
+      },
+    })
+      .then((like) => {
+        if (!like) throw new Error("You haven't liked this restaurant");
+
+        return like.destroy();
+      })
+      .then(() => res.redirect("back"))
+      .catch((err) => next(err));
+  },
 };
 module.exports = userController;
