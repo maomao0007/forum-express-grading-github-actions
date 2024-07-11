@@ -2,8 +2,6 @@ const bcrypt = require("bcryptjs"); //載入 bcrypt
 const db = require("../models");
 const { User, Comment, Restaurant, Favorite, Like } = db;
 const { localFileHandler } = require("../helpers/file-helpers");
-// const { Where } = require("sequelize/types/utils");
-// const { deleteRestaurant } = require("./admin-controller");
 
 const userController = {
   signUpPage: (req, res) => {
