@@ -197,7 +197,7 @@ const userController = {
           ...user.toJSON(),
           // 計算追蹤者人數
           followerCount: user.Followers.length,
-          // 判斷目前登入使用者是否已追蹤該 user 物件
+          // 判斷目前登入的使用者是否已追蹤該 user 物件
           isFollowed: req.user.Followings.some((f) => f.id === user.id),
         }))
         // 根據 followerCount 把 user 由大排到小，追蹤者多的人排在前面

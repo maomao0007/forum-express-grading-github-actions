@@ -1,4 +1,4 @@
-const { Restaurant, Category, Comment, User } = require("../models");
+const { Restaurant, Category, Comment, User, Favorite } = require("../models");
 const { getOffset, getPagination } = require("../helpers/pagination-helper");
 const restaurantController = {
   getRestaurants: (req, res, next) => {
@@ -22,9 +22,9 @@ const restaurantController = {
     ])
       .then(([restaurants, categories]) => {
         const favoritedRestaurantsId =
-           req.user && req.user.FavoritedRestaurants.map((fr) => fr.id);
+          req.user && req.user.FavoritedRestaurants.map((fr) => fr.id);
         const likedRestaurantsId =
-           req.user && req.user.LikedRestaurants.map((lr) => lr.id);
+          req.user && req.user.LikedRestaurants.map((lr) => lr.id);
         const data = restaurants.rows.map((r) => ({
           ...r,
           description: r.description.substring(0, 50),
@@ -46,7 +46,7 @@ const restaurantController = {
         Category,
         { model: Comment, include: User },
         { model: User, as: "FavoritedUsers" },
-        { model: User, as: "LikedUsers"}
+        { model: User, as: "LikedUsers" },
       ],
     })
       .then((restaurant) => {
@@ -57,14 +57,12 @@ const restaurantController = {
       .then((restaurant) => {
         const isFavorited = restaurant.FavoritedUsers.some(
           (f) => f.id === req.user.id
-          )
-        const isLiked = restaurant.LikedUsers.some(
-          (l) => l.id === req.user.id
-        )
+        );
+        const isLiked = restaurant.LikedUsers.some((l) => l.id === req.user.id);
         return res.render("restaurant", {
           restaurant: restaurant.toJSON(),
           isFavorited,
-          isLiked
+          isLiked,
         });
       })
       .catch((err) => next(err));
@@ -82,7 +80,7 @@ const restaurantController = {
       })
       .catch((err) => next(err));
   },
-  getFeeds: (req, res, next) => { 
+  getFeeds: (req, res, next) => {
     return Promise.all([
       Restaurant.findAll({
         // 查最新的 10 筆新增的餐廳和新增的評論
@@ -109,7 +107,36 @@ const restaurantController = {
         });
       })
       .catch((err) => next(err));
-  }
-
+  },
+  getTopRestaurants: (req, res, next) => {
+    // 撈出所有 Restaurant 與 User 資料
+    return Restaurant.findAll({
+      include: [{ model: User, as: "FavoritedUsers" }],
+    })
+      .then((restaurants) => {
+        // 整理 restaurants 資料，把每個 restaurants 項目都拿出來處理一次，並把新陣列儲存在 restaurants 裡
+        const result = restaurants
+          .map((restaurant) => ({
+            // 整理格式
+            ...restaurant.toJSON(),
+            description:
+              restaurant.description.length >= 100
+                ? restaurant.description.substring(0, 97) + "..."
+                : restaurant.description,
+            // 計算收藏人數
+            favoritedCount: restaurant.FavoritedUsers.length,
+            // 目前登入的使用者所收藏的餐廳裡的 id，一個個比對是否等於現在資料傳進來 restaurant 的 id
+            isFavorited:
+              req.user && req.user.FavoritedRestaurants.some(
+                (fr) => fr.id === restaurant.id
+              ),
+          }))
+          // 根據 favoritedCount 把收藏多的餐廳排在前面
+          .sort((a, b) => b.favoritedCount - a.favoritedCount)
+          .slice(0, 10);
+        res.render("top-restaurants", { restaurants: result });
+      })
+      .catch((err) => next(err));
+  },
 };
 module.exports = restaurantController;
