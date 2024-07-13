@@ -17,7 +17,7 @@
                 <strong>{{ user.email }}</strong>
               </div>
               <div class="mb-3">
-                {{ user.Comments.length }} <strong>評論過的餐廳</strong> 
+                {{ uniqueCommentedlength }} <strong>評論過的餐廳</strong> 
               </div>
               <div class="mb-3">
                 {{ user.FavoritedRestaurants.length }} <strong>收藏的餐廳</strong> 
@@ -95,11 +95,11 @@
           <!-- 評論過的餐廳 -->
           <div class="card">
             <div class="card-header">
-              <h6 class="mb-0">{{ user.Comments.length }} 評論過的餐廳</h6>
+              <h6 class="mb-0">{{ uniqueCommented.length }} 評論過的餐廳</h6>
             </div>
             <div class="card-body">
               <div class="d-flex flex-wrap">
-                {{#each user.Comments}}
+                {{#each uniqueCommented}}
                 <a href="#comment-{{this.id}}" class="m-1 restaurant-item">
                   <img src="{{ this.Restaurant.image }}" alt="{{ this.Restaurant.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: cover;">
                 </a>
@@ -112,7 +112,7 @@
           <div class="card mt-4">
             <div class="card-body">
               <div class="comment-details" style="display: none;">
-                {{#each user.Comments}}
+                {{#each uniqueCommented}}
                 <div id="comment-{{this.id}}" class="comment-item mb-4">
                   <h5>{{this.Restaurant.name}}</h5>
                   <blockquote class="blockquote">

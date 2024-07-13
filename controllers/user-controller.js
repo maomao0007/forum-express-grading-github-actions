@@ -60,9 +60,16 @@ const userController = {
 
         // 轉換為 JSON 格式
         user = user.toJSON();
-        
+        // 剔除了重複評論的餐廳
+        const uniqueCommented = [
+          ...new Set(user.Comments.map((c) => c.Restaurant.id)),
+        ].map(
+          (id) => user.Comments.find((c) => c.Restaurant.id === id)
+        );
+
         res.render("users/profile", {
           user,
+          uniqueCommented,
         });
         console.log(user);
       })
