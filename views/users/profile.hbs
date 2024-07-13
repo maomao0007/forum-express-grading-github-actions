@@ -1,57 +1,132 @@
 <div class="container">
   <div class="row">
-    <div class="col-md-4">
-      <img class="img-fluid rounded" src="{{ user.image }}" alt="{{ user.name }}'s profile picture" 
-           style="width: 100%; max-width: 250px; transition: opacity 0.5s;" onload="this.style.opacity=1">
-    </div>
-    <div class="col-md-8">
-      <div class="mb-3">
-        <strong>Name:</strong> {{ user.name }}
-      </div>
-      <div class="mb-3">
-        <strong>Email:</strong> {{ user.email }}
-      </div>
-      <div class="mt-4">
-        <a class="btn btn-outline-secondary me-2" href="/users/{{user.id}}/edit">Edit</a>
-        <a class="btn btn-outline-info" href="javascript:history.back()">Back</a>
-      </div>
-    </div>
-  </div>
-
-  <hr>
-
-  <div class="row mt-4">
-    <div class="col-12">
-      <h5>已評論過的餐廳</h5>
-    </div>
-    {{!-- {{#each comments}} --}}
-    {{#each user.Comments}}
-      <div class="col-md-4 mb-4">
-        <div class="restaurant-item">
-          <a href="#comment-{{this.id}}">
-            <img src="{{ this.Restaurant.image }}" alt="{{ this.Restaurant.name }}" class="img-fluid" style="max-width: 200px;">
-          </a>
-          <h6 class="mt-2">{{this.Restaurant.name}}</h6>
+    <!-- 用戶資料部分 -->
+    <div class="col-md-12 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <img class="img-fluid rounded" src="{{ user.image }}" alt="{{ user.name }}'s profile picture" 
+                   style="width: 100%; max-width: 250px; transition: opacity 0.5s;" onload="this.style.opacity=1">
+            </div>
+            <div class="col-md-8">
+              <div class="mb-3">
+                <strong>{{ user.name }}</strong>
+              </div>
+              <div class="mb-3">
+                <strong>{{ user.email }}</strong>
+              </div>
+              <div class="mb-3">
+                {{ user.Comments.length }} <strong>評論過的餐廳</strong> 
+              </div>
+              <div class="mb-3">
+                {{ user.FavoritedRestaurants.length }} <strong>收藏的餐廳</strong> 
+              </div>
+              <div class="mb-3">
+                {{ user.Followings.length }} <strong>followings (追蹤中)</strong>
+              </div>
+              <div class="mb-3">
+                {{ user.Followers.length }} <strong>followers (追蹤者)</strong> 
+              </div>
+              <div class="mt-4">
+                <a class="btn btn-outline-secondary me-2" href="/users/{{user.id}}/edit">Edit</a>
+                <a class="btn btn-outline-info" href="javascript:history.back()">Back</a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    {{/each}}
-  </div>
+    </div>
 
-  <div class="row">
-    <div class="col-12">
-      <div class="comment-details" style="display: none;">
-        {{!-- {{#each comments}} --}}
-        {{#each user.Comments}}
-          <div id="comment-{{this.id}}" class="comment-item mb-4">
-            <h5>{{this.Restaurant.name}}</h5>
-            <blockquote class="blockquote">
-              <p>{{this.text}}</p>
-              <footer class="blockquote-footer">
-                <a href="/users/{{../user.id}}">{{../user.name}}</a> 評論於 {{relativeTimeFromNow this.createdAt}}
-              </footer>
-            </blockquote>
+    <div class="col-md-12">
+      <div class="row">
+        <!-- 追蹤中和追蹤者 -->
+        <div class="col-md-4">
+          <!-- 自己去追蹤的人 -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">{{ user.Followings.length }} followings (追蹤中)</h6>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap">
+                {{#each user.Followings}}
+                <a href="{{this.id}}" class="m-1">
+                  <img src="{{ this.image }}" alt="{{ this.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: cover;">
+                </a>
+                {{/each}}
+              </div>
+            </div>
           </div>
-        {{/each}}
+          <!-- 追蹤自己的人 -->
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">{{ user.Followers.length }} followers (追蹤者)</h6>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap">
+                {{#each user.Followers}}
+                <a href="{{this.id}}" class="m-1">
+                  <img src="{{ this.image }}" alt="{{ this.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: cover;">
+                </a>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 已收藏餐廳和已評論餐廳 -->
+        <div class="col-md-8">
+          <!-- 收藏過的餐廳 -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">{{ user.FavoritedRestaurants.length }} 收藏的餐廳</h6>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap">
+                {{#each user.FavoritedRestaurants}}
+                <a href="/restaurants/{{this.id}}" class="m-1">
+                  <img src="{{ this.image }}" alt="{{ this.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: cover;">
+                </a>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+          
+          <!-- 評論過的餐廳 -->
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">{{ user.Comments.length }} 評論過的餐廳</h6>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap">
+                {{#each user.Comments}}
+                <a href="#comment-{{this.id}}" class="m-1 restaurant-item">
+                  <img src="{{ this.Restaurant.image }}" alt="{{ this.Restaurant.name }}" class="img-fluid" style="width: 50px; height: 50px; object-fit: cover;">
+                </a>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+          
+          <!-- 評論詳情 -->
+          <div class="card mt-4">
+            <div class="card-body">
+              <div class="comment-details" style="display: none;">
+                {{#each user.Comments}}
+                <div id="comment-{{this.id}}" class="comment-item mb-4">
+                  <h5>{{this.Restaurant.name}}</h5>
+                  <blockquote class="blockquote">
+                    <p>{{this.text}}</p>
+                    <footer class="blockquote-footer">
+                      <a href="/users/{{../user.id}}">{{../user.name}}</a> 評論於 {{relativeTimeFromNow this.createdAt}}
+                    </footer>
+                  </blockquote>
+                </div>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

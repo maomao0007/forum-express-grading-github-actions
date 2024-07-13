@@ -48,17 +48,23 @@ const userController = {
   },
   getUser: (req, res, next) => {
     return User.findByPk(req.params.id, {
-      include: { model: Comment, include: [Restaurant] },
+      include: [
+        { model: Comment, include: [Restaurant] },
+        { model: Restaurant, as: "FavoritedRestaurants" },
+        { model: User, as: "Followers" },
+        { model: User, as: "Followings" }
+      ]
     })
       .then((user) => {
         if (!user) throw new Error("User didn't exist.");
 
         // 轉換為 JSON 格式
         user = user.toJSON();
-
+        
         res.render("users/profile", {
           user,
         });
+        console.log(user);
       })
       .catch((err) => next(err));
   },
