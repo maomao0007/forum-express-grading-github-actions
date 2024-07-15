@@ -1,5 +1,5 @@
-const { Restaurant, User, Category } = require("../models");
-const { localFileHandler } = require("../helpers/file-helpers"); // 將 file-helper
+const { Restaurant, User, Category } = require("../../models");
+const { localFileHandler } = require("../../helpers/file-helpers"); // 將 file-helper
 
 const adminController = {
   getRestaurants: (req, res, next) => {
@@ -13,13 +13,16 @@ const adminController = {
   },
   createRestaurant: (req, res) => {
     return Category.findAll({
-      raw: true
+      raw: true,
     })
-      .then(categories => res.render('admin/create-restaurant', { categories }))
-      .catch(err => next(err))
+      .then((categories) =>
+        res.render("admin/create-restaurant", { categories })
+      )
+      .catch((err) => next(err));
   },
   postRestaurant: (req, res, next) => {
-    const { name, tel, address, openingHours, description, categoryId } = req.body;
+    const { name, tel, address, openingHours, description, categoryId } =
+      req.body;
     if (!name) throw new Error("Restaurant name is required!");
     const { file } = req; // 把檔案取出來
     return localFileHandler(file)
@@ -31,7 +34,7 @@ const adminController = {
           openingHours,
           description,
           image: filePath || null,
-          categoryId
+          categoryId,
         })
       )
       .then(() => {
@@ -44,8 +47,8 @@ const adminController = {
     return Restaurant.findByPk(req.params.id, {
       //去資料庫用 id 找一筆資料
       raw: true, // 找到以後整理格式再回傳
-      nest: true, 
-      include: [Category]
+      nest: true,
+      include: [Category],
     })
       .then((restaurant) => {
         if (!restaurant) throw new Error("Restaurant didn't exist!"); //  如果找不到，回傳錯誤訊息，後面不執行
@@ -54,9 +57,9 @@ const adminController = {
       .catch((err) => next(err));
   },
   editRestaurant: (req, res, next) => {
-    Promise.all([ 
+    Promise.all([
       Restaurant.findByPk(req.params.id, { raw: true }),
-      Category.findAll({ raw: true })
+      Category.findAll({ raw: true }),
     ])
 
       .then(([restaurant, categories]) => {
@@ -66,7 +69,8 @@ const adminController = {
       .catch((err) => next(err));
   },
   putRestaurant: (req, res, next) => {
-    const { name, tel, address, openingHours, description, categoryId } = req.body;
+    const { name, tel, address, openingHours, description, categoryId } =
+      req.body;
     if (!name) throw new Error("Restaurant name is required!");
     const { file } = req;
 
@@ -84,7 +88,7 @@ const adminController = {
           openingHours,
           description,
           image: filePath || restaurant.image,
-          categoryId
+          categoryId,
         });
       })
       .then(() => {
@@ -110,23 +114,23 @@ const adminController = {
       .catch((err) => next(err));
   },
 
-    patchUser: (req, res, next) => {
-      return User.findByPk(req.params.id)
-        .then(user => {
-          if (!user) throw new Error("User didn't exist!")
-          if (user.email === 'root@example.com') {
-            req.flash('error_messages', '禁止變更 root 權限')
-            return res.redirect('back')
-          }
+  patchUser: (req, res, next) => {
+    return User.findByPk(req.params.id)
+      .then((user) => {
+        if (!user) throw new Error("User didn't exist!");
+        if (user.email === "root@example.com") {
+          req.flash("error_messages", "禁止變更 root 權限");
+          return res.redirect("back");
+        }
 
-          return user.update({ isAdmin: !user.isAdmin })
-        })
-        .then(() => {
-          req.flash('success_messages', '使用者權限變更成功')
-          res.redirect('/admin/users')
-        })
-        .catch(err => next(err))
-    }
-  }
+        return user.update({ isAdmin: !user.isAdmin });
+      })
+      .then(() => {
+        req.flash("success_messages", "使用者權限變更成功");
+        res.redirect("/admin/users");
+      })
+      .catch((err) => next(err));
+  },
+};
 
 module.exports = adminController;
