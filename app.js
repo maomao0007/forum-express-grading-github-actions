@@ -7,12 +7,11 @@ const session = require("express-session");
 const passport = require("./config/passport");
 const handlebarsHelpers = require("./helpers/handlebars-helpers"); // 引入 handlebars-helpers
 const { getUser } = require("./helpers/auth-helpers");
-const { pages } = require("./routes");
+const { pages, apis } = require("./routes");
 
 const app = express();
 const port = process.env.PORT || 3000;
 const SESSION_SECRET = "secret";
-const db = require("./models"); // 暫時新增這行，引入資料庫，檢查完可刪
 // 註冊 Handlebars 樣板引擎，並指定副檔名為 .hbs
 app.engine("hbs", handlebars({ extname: ".hbs", helpers: handlebarsHelpers }));
 // 設定使用 Handlebars 做為樣板引擎
@@ -33,6 +32,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use("/api", apis)
 app.use(pages);
 
 app.listen(port, () => {
