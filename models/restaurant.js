@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 const {
   Model
-} = require('sequelize');
+} = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   class Restaurant extends Model {
     /**
@@ -9,21 +9,21 @@ module.exports = (sequelize, DataTypes) => {
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
-    static associate(models) {
-      Restaurant.belongsTo(models.Category, { foreignKey: "categoryId" });
-      Restaurant.hasMany(models.Comment, { foreignKey: "restaurantId" });
+    static associate (models) {
+      Restaurant.belongsTo(models.Category, { foreignKey: 'categoryId' })
+      Restaurant.hasMany(models.Comment, { foreignKey: 'restaurantId' })
       Restaurant.belongsToMany(
         models.User, { // 多對多關係
-        through: models.Favorite, // 透過 Favorite 表來建立關聯
-        foreignKey: "restaurantId", // 對 Favorite 表設定 FK
-        as: "FavoritedUsers", // 幫這個關聯取個名稱
-        });
+          through: models.Favorite, // 透過 Favorite 表來建立關聯
+          foreignKey: 'restaurantId', // 對 Favorite 表設定 FK
+          as: 'FavoritedUsers' // 幫這個關聯取個名稱
+        })
       Restaurant.belongsToMany(models.User, {
         // 多對多關係
         through: models.Like,
-        foreignKey: "restaurantId",
-        as: "LikedUsers",
-      });
+        foreignKey: 'restaurantId',
+        as: 'LikedUsers'
+      })
     }
   };
   Restaurant.init(
@@ -34,14 +34,14 @@ module.exports = (sequelize, DataTypes) => {
       openingHours: DataTypes.STRING,
       description: DataTypes.TEXT,
       image: DataTypes.STRING,
-      viewCount: DataTypes.INTEGER,
+      viewCount: DataTypes.INTEGER
     },
     {
       sequelize,
-      modelName: "Restaurant",
-      tableName: "Restaurants",
-      underscored: true,
+      modelName: 'Restaurant',
+      tableName: 'Restaurants',
+      underscored: true
     }
-  );
-  return Restaurant;
-};
+  )
+  return Restaurant
+}

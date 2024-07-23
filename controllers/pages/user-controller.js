@@ -1,259 +1,100 @@
-const bcrypt = require("bcryptjs"); //載入 bcrypt
-const db = require("../../models");
-const { User, Comment, Restaurant, Favorite, Like, Followship } = db;
-const { localFileHandler } = require("../../helpers/file-helpers");
+const bcrypt = require('bcryptjs') // 載入 bcrypt
+const db = require('../../models')
+const { User, Comment, Restaurant, Favorite, Like, Followship } = db
+const userServices = require('../../services/user-services')
+const { imgurFileHandler } = require('../../helpers/file-helpers')
 
 const userController = {
   signUpPage: (req, res) => {
-    res.render("signup");
+    res.render('signup')
   },
   signUp: (req, res, next) => {
-    //修改這裡
+    // 修改這裡
     // 如果兩次輸入的密碼不同，就建立一個 Error 物件並拋出
-    if (req.body.password !== req.body.passwordCheck)
-      throw new Error("Passwords do not match!");
+    if (req.body.password !== req.body.passwordCheck) { throw new Error('Passwords do not match!') }
 
     // 確認資料裡面沒有一樣的 email，若有，就建立一個 Error 物件並拋出
     User.findOne({ where: { email: req.body.email } })
-      .then((user) => {
-        if (user) throw new Error("Email already exists!");
-        return bcrypt.hash(req.body.password, 10); // 前面加 return
+      .then(user => {
+        if (user) throw new Error('Email already exists!')
+        return bcrypt.hash(req.body.password, 10) // 前面加 return
       })
-      .then((hash) =>
+      .then(hash =>
         User.create({
-          //上面錯誤狀況都沒發生，就把使用者的資料寫入資料庫
+          // 上面錯誤狀況都沒發生，就把使用者的資料寫入資料庫
           name: req.body.name,
           email: req.body.email,
-          password: hash,
+          password: hash
         })
       )
       .then(() => {
-        req.flash("success_messages", "Successfully registered！"); //並顯示成功訊息
-        res.redirect("/signin");
+        req.flash('success_messages', 'Successfully registered！') // 並顯示成功訊息
+        res.redirect('/signin')
       })
-      //接住前面拋出的錯誤，呼叫專門做錯誤處理的 middleware
-      .catch((err) => next(err));
+      // 接住前面拋出的錯誤，呼叫專門做錯誤處理的 middleware
+      .catch(err => next(err))
   },
   signInPage: (req, res) => {
-    res.render("signin");
+    res.render('signin')
   },
   signIn: (req, res) => {
-    req.flash("success_messages", "Successfully logged in！");
-    res.redirect("/restaurants");
+    req.flash('success_messages', 'Successfully logged in！')
+    res.redirect('/restaurants')
   },
   logout: (req, res) => {
-    req.flash("success_messages", "Successfully logged out！");
-    req.logout();
-    res.redirect("/signin");
+    userServices.logout(req, (err, data) =>
+      err ? next(err) : res.redirect('/signin', data)
+    )
   },
   getUser: (req, res, next) => {
-    return User.findByPk(req.params.id, {
-      include: [
-        { model: Comment, include: [Restaurant] },
-        { model: Restaurant, as: "FavoritedRestaurants" },
-        { model: User, as: "Followers" },
-        { model: User, as: "Followings" }
-      ]
-    })
-      .then((user) => {
-        if (!user) throw new Error("User didn't exist.");
-
-        // 轉換為 JSON 格式
-        user = user.toJSON();
-        // 剔除了重複評論的餐廳
-        const uniqueCommented = [
-          ...new Set(user.Comments.map((c) => c.Restaurant.id)),
-        ].map(
-          (id) => user.Comments.find((c) => c.Restaurant.id === id)
-        );
-
-        res.render("users/profile", {
-          user,
-          uniqueCommented,
-        });
-        console.log(user);
-      })
-      .catch((err) => next(err));
+    userServices.getUser(req, (err, data) =>
+      err ? next(err) : res.render('users/profile', data)
+    )
   },
-
   editUser: (req, res, next) => {
-    const id = req.params.id;
-    return User.findByPk(id)
-      .then((user) => {
-        if (!user) throw new Error("User didn't exist.");
-        user = user.toJSON();
-
-        res.render("users/edit", {
-          user,
-        });
-      })
-      .catch((err) => next(err));
+    userServices.editUser(req, (err, data) =>
+      err ? next(err) : res.render('users/edit', data)
+    )
   },
   putUser: (req, res, next) => {
-    const { name } = req.body;
-    if (req.user.id !== Number(req.params.id))
-      throw new Error("只能更改自己的資料！");
-    if (!name) throw new Error("User name is required!");
-    // 把檔案取出來
-    const { file } = req;
-    // 非同步處理
-    return Promise.all([
-      // 去資料庫查有沒有這個使用者
-      User.findByPk(req.params.id),
-      // 把檔案傳到 file-helper 處理
-      localFileHandler(file),
-    ])
-      .then(([user, filePath]) => {
-        // 以上兩樣事都做完以後
-        if (!user) throw new Error("User didn't exist!");
-        return user.update({
-          name,
-          // 如果 filePath 是 Truthy (使用者有上傳新照片) 就用 filePath，是 Falsy (使用者沒有上傳新照片) 就沿用原本資料庫內的值
-          image: filePath || user.image,
-        });
-      })
-      .then((user) => {
-        req.flash("success_messages", "使用者資料編輯成功");
-        res.redirect(`/users/${user.id}`);
-      })
-      .catch((err) => next(err));
-  },
-
-  addFavorite: (req, res, next) => {
-    const { restaurantId } = req.params;
-    return Promise.all([
-      Restaurant.findByPk(restaurantId),
-      Favorite.findOne({
-        // 找 user 和 restaurant 之間的關係，如果有關係，表示之前已加入收藏
-        where: {
-          userId: req.user.id,
-          restaurantId,
-        },
-      }),
-    ])
-      .then(([restaurant, favorite]) => {
-        if (!restaurant) throw new Error("Restaurant didn't exist!");
-        if (favorite) throw new Error("You have favorited this restaurant!");
-
-        return Favorite.create({
-          userId: req.user.id,
-          restaurantId,
-        });
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
-  },
-  removeFavorite: (req, res, next) => {
-    return Favorite.findOne({
-      where: {
-        userId: req.user.id,
-        restaurantId: req.params.restaurantId,
-      },
-    })
-      .then((favorite) => {
-        // userId 與 restaurantId 如果沒有關聯，就回傳錯誤訊息
-        if (!favorite) throw new Error("You haven't favorited this restaurant");
-
-        return favorite.destroy(); // 有關聯就刪除
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
-  },
-  addLike: (req, res, next) => {
-    const { restaurantId } = req.params;
-    return Promise.all([
-      Restaurant.findByPk(restaurantId),
-      Like.findOne({
-        where: {
-          userId: req.user.id,
-          restaurantId,
-        },
-      }),
-    ])
-      .then(([restaurant, like]) => {
-        if (!restaurant) throw new Error("Restaurant didn't exist!");
-        if (like) throw new Error("You have liked this restaurant!");
-
-        return Like.create({
-          userId: req.user.id,
-          restaurantId,
-        });
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
-  },
-  removeLike: (req, res, next) => {
-    return Like.findOne({
-      where: {
-        userId: req.user.id,
-        restaurantId: req.params.restaurantId,
-      },
-    })
-      .then((like) => {
-        if (!like) throw new Error("You haven't liked this restaurant");
-
-        return like.destroy();
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
+    userServices.putUser(req, (err, data) =>
+      err ? next(err) : res.redirect(`/users/${user.id}`, data)
+    )
   },
   getTopUsers: (req, res, next) => {
-    // 撈出所有 User 與 followers 資料
-    return User.findAll({
-      include: [{ model: User, as: "Followers" }],
-    })
-      .then((users) => {
-        // 整理 users 資料，把每個 user 項目都拿出來處理一次，並把新陣列儲存在 users 裡
-        const result = users
-        .map((user) => ({
-          // 整理格式
-          ...user.toJSON(),
-          // 計算追蹤者人數
-          followerCount: user.Followers.length,
-          // 判斷目前登入的使用者是否已追蹤該 user 物件
-          isFollowed: req.user.Followings.some((f) => f.id === user.id),
-        }))
-        // 根據 followerCount 把 user 由大排到小，追蹤者多的人排在前面
-        .sort((a, b) => b.followerCount - a.followerCount)
-        res.render("top-users", { users: result })
-      })
-      .catch((err) => next(err));
+    userServices.getTopUsers(req, (err, data) =>
+      err ? next(err) : res.render('top-users', data)
+    )
+  },
+  addFavorite: (req, res, next) => {
+    userServices.addFavorite(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
+  },
+  removeFavorite: (req, res, next) => {
+    userServices.removeFavorite(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
+  },
+  addLike: (req, res, next) => {
+    userServices.addLike(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
+  },
+  removeLike: (req, res, next) => {
+    userServices.removeLike(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
   },
   addFollowing: (req, res, next) => {
-    const { userId } = req.params;
-    Promise.all([
-      User.findByPk(userId),
-      Followship.findOne({
-        where: {
-          followerId: req.user.id,
-          followingId: req.params.userId,
-        },
-      }),
-    ])
-      .then(([user, followship]) => {
-        if (!user) throw new Error("User didn't exist!");
-        if (followship) throw new Error("You are already following this user!");
-        return Followship.create({
-          followerId: req.user.id,
-          followingId: userId,
-        });
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
+    userServices.addFollowing(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
   },
   removeFollowing: (req, res, next) => {
-    Followship.findOne({
-      where: {
-        followerId: req.user.id,
-        followingId: req.params.userId,
-      },
-    })
-      .then((followship) => {
-        if (!followship) throw new Error("You haven't followed this user!");
-        return followship.destroy();
-      })
-      .then(() => res.redirect("back"))
-      .catch((err) => next(err));
-  },
-};
-module.exports = userController;
+    userServices.removeFollowing(req, (err, data) =>
+      err ? next(err) : res.redirect('back', data)
+    )
+  }
+}
+module.exports = userController

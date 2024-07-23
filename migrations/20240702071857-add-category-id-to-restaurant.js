@@ -1,17 +1,17 @@
-"use strict";
+'use strict'
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn("Restaurants", "category_id", {
+    await queryInterface.addColumn('Restaurants', 'category_id', {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: "Categories",
-        key: "id",
-      },
-    });
+        model: 'Categories',
+        key: 'id'
+      }
+    })
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn("Restaurants", "category_id");
-  },
-};
+    await queryInterface.removeColumn('Restaurants', 'category_id')
+  }
+}
